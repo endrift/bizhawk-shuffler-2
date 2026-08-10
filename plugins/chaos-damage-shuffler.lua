@@ -183,6 +183,7 @@ plugin.description =
 	-Chip and Dale Rescue Rangers 1 (NES), 1-2p
 	-Chip and Dale Rescue Rangers 2 (NES), 1-2p
 	-Clash At Demonhead (NES), 1p
+	-Clockwork Knight (SAT), 1p
 	-Crash Bandicoot 1-3 (PSX), 1p, US version
 	-Cyber-Lip (Arcade), 1p
 	-Crash Bandicoot 4 (bootleg) (GBA), 1p
@@ -9722,6 +9723,17 @@ local gamedata = {
 		LivesWhichRAM=function() return "WRAM" end,
 		p1livesaddr=function() return 0x0AF2 end,
 		maxlives=function() return 99 end,
+		ActiveP1=function() return true end, -- p1 is always active!
+	},
+	['ClockworkKnight_SAT']={ -- Clockwork Knight, Saturn
+		func=singleplayer_withlives_swap,
+		p1gethp=function() return memory.read_u8(0x43CB4, "Work Ram High") end,
+		p1getlc=function() return memory.read_u16_be(0x43CBC, "Work Ram High") end,
+		maxhp=function() return 5 end,
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function() return 0x43CBD end, -- technically this is two bytes
+		LivesWhichRAM=function() return "Work Ram High" end,
+		maxlives=function() return 69 end,
 		ActiveP1=function() return true end, -- p1 is always active!
 	},
 }
