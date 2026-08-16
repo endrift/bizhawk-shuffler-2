@@ -184,6 +184,7 @@ plugin.description =
 	-Chip and Dale Rescue Rangers 2 (NES), 1-2p
 	-Clash At Demonhead (NES), 1p
 	-Clockwork Knight (SAT), 1p
+	-Clockwork Knight 2 (SAT), 1p
 	-Crash Bandicoot 1-3 (PSX), 1p, US version
 	-Cyber-Lip (Arcade), 1p
 	-Crash Bandicoot 4 (bootleg) (GBA), 1p
@@ -9732,6 +9733,47 @@ local gamedata = {
 		maxhp=function() return 5 end,
 		CanHaveInfiniteLives=true,
 		p1livesaddr=function() return 0x43CBD end, -- technically this is two bytes
+		LivesWhichRAM=function() return "Work Ram High" end,
+		maxlives=function() return 69 end,
+		ActiveP1=function() return true end, -- p1 is always active!
+	},
+	['ClockworkKnight2_SAT']={ -- Clockwork Knight, Saturn
+		func=singleplayer_withlives_swap,
+		gmode=function()
+			local is_ck1 = memory.read_u32_be(0x5BD28, "Work Ram High") ~= 0
+			local is_ck2 = memory.read_u8(0x413D1, "Work Ram High") >= 2
+			local ck1_max_health = memory.read_u8(0x41881, "Work Ram High") >= 2
+			return (is_ck1 and ck1_max_health) or is_ck2
+		end,
+		p1gethp=function()
+			if memory.read_u32_be(0x5BD28, "Work Ram High") ~= 0 then
+				return memory.read_u8(0x41880, "Work Ram High")
+			elseif memory.read_u8(0x413D1, "Work Ram High") >= 2 then
+				return memory.read_u8(0x413D0, "Work Ram High")
+			else
+				return 0
+			end
+		end,
+		p1getlc=function()
+			if memory.read_u32_be(0x5BD28, "Work Ram High") ~= 0 then
+				return memory.read_u16_be(0x41888, "Work Ram High")
+			elseif memory.read_u8(0x413D1, "Work Ram High") >= 2 then
+				return memory.read_u16_be(0x413D8, "Work Ram High")
+			else
+				return 0
+			end
+		end,
+		maxhp=function() return 5 end,
+		CanHaveInfiniteLives=true,
+		p1livesaddr=function()
+			if memory.read_u32_be(0x5BD28, "Work Ram High") ~= 0 then
+				return 0x41889
+			elseif memory.read_u8(0x413D1, "Work Ram High") >= 2 then
+				return 0x413D9
+			else
+				return 0
+			end
+		end, -- technically this is two bytes
 		LivesWhichRAM=function() return "Work Ram High" end,
 		maxlives=function() return 69 end,
 		ActiveP1=function() return true end, -- p1 is always active!
