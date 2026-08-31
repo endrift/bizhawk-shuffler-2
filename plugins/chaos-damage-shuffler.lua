@@ -16,6 +16,7 @@ plugin.settings =
 	{ name='LittleSamsonReviveFellas', type='boolean', label="Little Samson (NES): Revive allies on death"},
 	{ name='AdamantiumRageEnhanceHealing', type='boolean', label="Wolverine Adamantium Rage SNES: Greatly increases regeneration rate" },
 	{ name='GQ1NoRandomEncounters', type='boolean', label="Gargoyle's Quest 1: No random encounters" },
+	{ name='BatmanNESAmmoRefill', type='boolean', label="Batman NES: Refills the player's ammo after every shuffle" },
 	{ name='grace', type='number', label="Minimum grace period before swapping (won't go < 10 frames)", default=10 },
 	{ name='GraceOnHit', type='boolean', label="Apply grace period from last hit instead of last swap" },
 }
@@ -6079,6 +6080,9 @@ local gamedata = {
 		maxlives=function() return 9 end, -- Anything higher corrupts the pause menu graphics,
 		-- but technically works; anything negative, however, immediately triggers a Game Over
 		ActiveP1=function() return true end, -- p1 is always active!
+		cheats = {
+			BatmanNESAmmoRefill = { func = function() memory.write_u8(0x00B8, 99, "RAM") end,}, -- This sets the ammo count to the max after every shuffle.
+			},
 	},
 	['Rollergames_NES']={ -- Rollergames, NES
 		func=singleplayer_withlives_swap,
