@@ -13,10 +13,10 @@ plugin.settings =
 	{ name='DebugSingleGame', type='boolean', label='Debugging: Rearm the shuffler logic even if no new game was loaded' },
 	{ name='SMW2YI_MiniBonusSwaps', type='boolean', label="Yoshi's Island: Shuffle on Mini Battle damage/loss", default=true},
 	{ name='IceClimberBonusSwaps', type='boolean', label="Ice Climber (NES): Shuffle on failing the bonus game"},
-	{ name='LittleSamsonReviveFellas', type='boolean', label="Little Samson (NES): Revive allies on death"},
-	{ name='AdamantiumRageEnhanceHealing', type='boolean', label="Wolverine Adamantium Rage SNES: Greatly increases regeneration rate" },
-	{ name='GQ1NoRandomEncounters', type='boolean', label="Gargoyle's Quest 1: No random encounters" },
-	{ name='BatmanNESAmmoRefill', type='boolean', label="Batman NES: Refills the player's ammo after every shuffle" },
+	{ name='LittleSamsonReviveFellas', type='boolean', label="QoL: Revive allies on swapping in after death"},
+	{ name='AdamantiumRageEnhanceHealing', type='boolean', label="QoL: Wolverine Adamantium Rage SNES: Greatly increases regeneration rate" },
+	{ name='GQ1NoRandomEncounters', type='boolean', label="QoL: Gargoyle's Quest 1: No random encounters" },
+	{ name='AmmoRefill', type='boolean', label="QoL: Refills the player's ammo after every shuffle" },
 	{ name='grace', type='number', label="Minimum grace period before swapping (won't go < 10 frames)", default=10 },
 	{ name='GraceOnHit', type='boolean', label="Apply grace period from last hit instead of last swap" },
 }
@@ -425,9 +425,16 @@ plugin.description =
 	- Several games do not have 'lives' to make infinite, such as Anticipation, Super Metroid, A Link to the Past, and others. Nothing will change in these games with this option.
 	- ADVANCED: To override individual games (for example, to turn OFF infinite lives for a given game): find #TO_OVERRIDE_INFINITE_LIVES in this plugin and consult the example.
 
+	FOR QUALITY OF LIFE HACKS:
+	Enable the global QoL hacks setting, AND check the relevant QoL hacks that you want.  
+
+	Examples:
 	Auto-Clinger-Winger NES: You can enable max speed and auto-clear the maze (level 11).
 	-- You MUST use an unpatched ROM for this option to activate. The second player will not be able to move, so only Rash can get to the boss in 2p. Infinite Lives will be disabled for the second player in this scenario to prevent a softlock.
 	-- You still have to beat the boss. If you use Infinite Lives, this could make Clinger-Winger fairly trivial.
+	Ammo Refill currently applies to Batman (NES).
+	Revive Allies currently applies to Little Samson (NES).
+	These will be expanded!
 
 	Rash 1-player mode in Battlemaniacs (SNES): see above! Start in 2p, let Pimple die and let the continue timer run out to deathwarp. Make sure your 2p controller is mapped the same as 1p aside from Start, so you can progress. In the future, this may be more automated.
 
@@ -6081,8 +6088,12 @@ local gamedata = {
 		-- but technically works; anything negative, however, immediately triggers a Game Over
 		ActiveP1=function() return true end, -- p1 is always active!
 		cheats = {
-			BatmanNESAmmoRefill = { func = function() memory.write_u8(0x00B8, 99, "RAM") end,}, -- This sets the ammo count to the max after every shuffle.
+			AmmoRefill = { -- This sets the ammo count to the max after every shuffle.
+				func = function()
+					memory.write_u8(0x00B8, 99, "RAM")
+				end,
 			},
+		},
 	},
 	['Rollergames_NES']={ -- Rollergames, NES
 		func=singleplayer_withlives_swap,
