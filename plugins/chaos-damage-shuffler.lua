@@ -13,9 +13,10 @@ plugin.settings =
 	{ name='DebugSingleGame', type='boolean', label='Debugging: Rearm the shuffler logic even if no new game was loaded' },
 	{ name='SMW2YI_MiniBonusSwaps', type='boolean', label="Yoshi's Island: Shuffle on Mini Battle damage/loss", default=true},
 	{ name='IceClimberBonusSwaps', type='boolean', label="Ice Climber (NES): Shuffle on failing the bonus game"},
-	{ name='LittleSamsonReviveFellas', type='boolean', label="Little Samson (NES): Revive allies on death"},
-	{ name='AdamantiumRageEnhanceHealing', type='boolean', label="Wolverine Adamantium Rage SNES: Greatly increases regeneration rate" },
-	{ name='GQ1NoRandomEncounters', type='boolean', label="Gargoyle's Quest 1: No random encounters" },
+	{ name='LittleSamsonReviveFellas', type='boolean', label="QoL: Revive allies on swapping in after death"},
+	{ name='AdamantiumRageEnhanceHealing', type='boolean', label="QoL: Wolverine Adamantium Rage SNES: Greatly increases regeneration rate" },
+	{ name='GQ1NoRandomEncounters', type='boolean', label="QoL: Gargoyle's Quest 1: No random encounters" },
+	{ name='AmmoRefill', type='boolean', label="QoL: Refills the player's ammo after every shuffle" },
 	{ name='grace', type='number', label="Minimum grace period before swapping (won't go < 10 frames)", default=10 },
 	{ name='GraceOnHit', type='boolean', label="Apply grace period from last hit instead of last swap" },
 }
@@ -183,6 +184,7 @@ plugin.description =
 	-Chip and Dale Rescue Rangers 1 (NES), 1-2p
 	-Chip and Dale Rescue Rangers 2 (NES), 1-2p
 	-Clash At Demonhead (NES), 1p
+	-Classic Concentration (NES), 1p
 	-Clockwork Knight (SAT), 1p
 	-Clockwork Knight 2 (SAT), 1p
 	-Crash Bandicoot 1-3 (PSX), 1p, US version
@@ -194,6 +196,7 @@ plugin.description =
 	-Dick Tracy (NES), 1p
 	-Do-Re-Mi Fantasy - Milon no Dokidoki Daibouken (SNES), 1p
 	-DoDonPachi (Arcade), 1p
+	-Double Dare (NES), 1p
 	-Double Dragon 1 (NES), 1-2p, Mode A or B, shuffles on knockdown and death
 	-Double Dragon 2 (NES), 1-2p, shuffles on knockdown and death
 	-DuckTales (NES), 1p
@@ -364,6 +367,9 @@ plugin.description =
 	-WarioWare, Inc.: Mega Microgame$! (GBA), 1p - bonus games including 2p are pending
 	-Werewolf: The Last Warrior (NES), 1p
 	-WarioWare: Twisted! (GBA), 1p
+	-Wheel of Fortune (NES)
+	-Wheel of Fortune Family Edition (NES)
+	-Wheel of Fortune Junior Edition (NES)
 	-Wild Guns (SNES), 1p
 	-Wild West C.O.W.-Boys of Moo Mesa (Arcade), 1p
 	-Windjammers / Flying Power Disc (Arcade), 1p
@@ -421,9 +427,16 @@ plugin.description =
 	- Several games do not have 'lives' to make infinite, such as Anticipation, Super Metroid, A Link to the Past, and others. Nothing will change in these games with this option.
 	- ADVANCED: To override individual games (for example, to turn OFF infinite lives for a given game): find #TO_OVERRIDE_INFINITE_LIVES in this plugin and consult the example.
 
+	FOR QUALITY OF LIFE HACKS:
+	Enable the global QoL hacks setting, AND check the relevant QoL hacks that you want.  
+
+	Examples:
 	Auto-Clinger-Winger NES: You can enable max speed and auto-clear the maze (level 11).
 	-- You MUST use an unpatched ROM for this option to activate. The second player will not be able to move, so only Rash can get to the boss in 2p. Infinite Lives will be disabled for the second player in this scenario to prevent a softlock.
 	-- You still have to beat the boss. If you use Infinite Lives, this could make Clinger-Winger fairly trivial.
+	Ammo Refill currently applies to Batman (NES).
+	Revive Allies currently applies to Little Samson (NES).
+	These will be expanded!
 
 	Rash 1-player mode in Battlemaniacs (SNES): see above! Start in 2p, let Pimple die and let the continue timer run out to deathwarp. Make sure your 2p controller is mapped the same as 1p aside from Start, so you can progress. In the future, this may be more automated.
 
@@ -676,6 +689,29 @@ local function FamilyFeud_SNES_swap(gamemeta)
 			(player < 2), 30 -- It's player 1 or 2, not the CPU; give 30 frames of buzzer before and after (roughly) swaps
 		end
 	end
+
+local function WheelOfFortune_NES_swap(gamemeta)
+	return function()
+		local p2total_changed, p2total, prev_p2total = update_prev('p2total', gamemeta.getp2total())
+		local p3total_changed, p3total, prev_p3total = update_prev('p3total', gamemeta.getp3total())
+		local player_changed, player, prev_player = update_prev('player', gamemeta.getplayer())
+		local text_changed, text, prev_text = update_prev('text', gamemeta.gettext())
+		local name_changed, name, prev_name = update_prev('name', gamemeta.getname())
+		
+		return	
+			(text ~= name) and -- In the unlikely scenario that a player name matches the text checks, this prevents those shuffles entirely.
+			(p2total_changed and p2total > prev_p2total) or -- Player 2 solves
+			(p3total_changed and p3total > prev_p3total) or	-- Player 3 solves
+			((text_changed and player == 1) and -- Checking text rather than active player so it also works in 1-player without CPU opponents
+			(text == 3570914557 or -- Wrong Letter
+			text == 3891917012 or -- Miss Turn
+			text == 3925530105 or -- Bankrupt
+			text == 4057266675 or -- Must Buy Vowels
+			text == 4093049812 or -- Wrong Solve
+			text == 4177062384 or -- Bought a non-vowel
+			text == 4193506304)), 50 -- Out of Time
+		end
+	end	
 
 local function singleplayer_withlives_swap(gamemeta)
 	return function(data)
@@ -4430,6 +4466,58 @@ local gamedata = {
 		getwhichplayer=function() return memory.read_u8(0x08DF, "WRAM") end,
 		CanHaveInfiniteLives=false
 	},
+	['ClassicConcentration_NES']={ -- Classic Concentration (NES)
+		func=function() return function()
+		local prize_changed, prize, prev_prize = update_prev('prize', memory.read_u8(0x005B, "RAM"))
+		local solve_changed, solve, prev_solve = update_prev('solve', memory.read_u8(0x00C0, "RAM"))
+		local scene_changed, scene, prev_scene = update_prev('scene', memory.read_u8(0x0012, "RAM"))
+		local active_changed, active, prev_active = update_prev('active', memory.read_u8(0x001F, "RAM"))
+		return
+			--(prize_changed and prize > prev_prize) or -- Activate to swaps on any opponent matches.
+			(scene ~= 127 and active_changed and active == 1) or -- Swaps when P1 misses a match in main rounds. Does not trigger in bonus rounds.
+			(solve_changed and solve > prev_solve), 30  -- Swaps on P2 solving
+		end
+	end,
+	},
+	['WheelOfFortune_NES']={ -- Wheel of Fortune (NES)
+		func=WheelOfFortune_NES_swap,
+		getplayer=function() return memory.read_u8(0x0006, "RAM") end,
+		getp2total=function() return memory.read_u8(0x03AD, "RAM") end,
+		getp3total=function() return memory.read_u8(0x03B0, "RAM") end,
+		getname=function() return memory.read_u32_le(0x0382, "RAM") end,
+		gettext=function() return memory.read_u32_le(0x047C, "RAM") end,
+	},
+	['WheelOfFortune_Family_NES']={ -- Wheel of Fortune Family Edition (NES)
+		func=WheelOfFortune_NES_swap,
+		getplayer=function() return memory.read_u8(0x0006, "RAM") end,
+		getp2total=function() return memory.read_u8(0x043D, "RAM") end,
+		getp3total=function() return memory.read_u8(0x0440, "RAM") end,
+		getname=function() return memory.read_u32_le(0x0412, "RAM") end,
+		gettext=function() return memory.read_u32_le(0x050C, "RAM") end,
+	},
+	['WheelOfFortune_Junior_NES']={ -- Wheel of Fortune Junior Edition (NES)
+		func=WheelOfFortune_NES_swap,
+		getplayer=function() return memory.read_u8(0x0006, "RAM") end,
+		getp2total=function() return memory.read_u8(0x03AD, "RAM") end,
+		getp3total=function() return memory.read_u8(0x03B0, "RAM") end,
+		getname=function() return memory.read_u32_le(0x0382, "RAM") end,
+		gettext=function() return memory.read_u32_le(0x047C, "RAM") end,
+	},
+	['DoubleDare_NES']={ -- Double Dare (NES)
+		func=function() return function()
+			local score_changed, score, prev_score = update_prev('score', memory.read_u8(0x0607, "RAM"))
+			local player_changed, player, prev_player = update_prev('player', memory.read_u8(0x0570, "RAM"))
+			local text_changed, text, prev_text = update_prev('text', memory.read_u8(0x05F0, "RAM"))
+			local round_changed, round, prev_round = update_prev('round', memory.read_u8(0x05F8, "RAM"))
+			local parse_changed, parse, prev_parse = update_prev('parse', memory.read_u32_le(0x05C8, "RAM"))
+			return
+				--(score_changed and score > prev_score) or -- covers all instances of opponent getting money, including losing challenges and base value questions
+				(score_changed and score > prev_score and round == 0 and parse ~= 774910244) or -- Use these instead to not shuffle on base value questions in Round 1
+				(score_changed and score > prev_score and round == 1 and parse ~= 774910500) or -- Round 2
+				(text == 12 and player == 0), 50 -- covers getting a question wrong without a dare
+			end
+		end,
+	},
 	['Frogger2_PS1']={ -- Frogger 2 - Swampy's Revenge (USA)
 		func=singleplayer_withlives_swap,
 		p1gethp=function() return 1 end,
@@ -6001,6 +6089,11 @@ local gamedata = {
 		maxlives=function() return 9 end, -- Anything higher corrupts the pause menu graphics,
 		-- but technically works; anything negative, however, immediately triggers a Game Over
 		ActiveP1=function() return true end, -- p1 is always active!
+		cheats = {
+			AmmoRefill = function() memory.write_u8(0x00B8, 99, "RAM") end,
+			-- This sets the ammo count to the max after every shuffle.
+			},
+		},
 	},
 	['Rollergames_NES']={ -- Rollergames, NES
 		func=singleplayer_withlives_swap,
@@ -9594,7 +9687,7 @@ local gamedata = {
 			-- it's possible to get an extra life while you have the maximum lives, but your lives will be pushed back down to 8 at the start of the next level. 
 			return math.min(memory.read_u8(0x0020, "rp2a03 : ram : 0x0-0x7FF"), 8) end,
 		maxhp=function() return 1 end, 
-		gmode=function() return memory.read_u8(0x0219, "rp2a03 : ram : 0x0-0x7FF") == 251 end,
+		gmode=function() return memory.read_u8(0x00F5, "rp2a03 : ram : 0x0-0x7FF") == 6 end,
 		CanHaveInfiniteLives=true,
 		p1livesaddr=function() return 0x0020 end,
 		LivesWhichRAM=function() return "rp2a03 : ram : 0x0-0x7FF" end,
