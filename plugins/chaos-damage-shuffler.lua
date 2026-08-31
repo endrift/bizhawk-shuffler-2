@@ -6088,10 +6088,8 @@ local gamedata = {
 		-- but technically works; anything negative, however, immediately triggers a Game Over
 		ActiveP1=function() return true end, -- p1 is always active!
 		cheats = {
-			AmmoRefill = { -- This sets the ammo count to the max after every shuffle.
-				func = function()
-					memory.write_u8(0x00B8, 99, "RAM")
-				end,
+			AmmoRefill = function() memory.write_u8(0x00B8, 99, "RAM") end,
+			-- This sets the ammo count to the max after every shuffle.
 			},
 		},
 	},
