@@ -183,6 +183,7 @@ plugin.description =
 	-Chip and Dale Rescue Rangers 1 (NES), 1-2p
 	-Chip and Dale Rescue Rangers 2 (NES), 1-2p
 	-Clash At Demonhead (NES), 1p
+	-Classic Concentration (NES), 1p
 	-Crash Bandicoot 1-3 (PSX), 1p, US version
 	-Cyber-Lip (Arcade), 1p
 	-Crash Bandicoot 4 (bootleg) (GBA), 1p
@@ -4454,6 +4455,19 @@ local gamedata = {
 		getstrike=function() return memory.read_u8(0x020E, "WRAM") end,
 		getwhichplayer=function() return memory.read_u8(0x08DF, "WRAM") end,
 		CanHaveInfiniteLives=false
+	},
+	['ClassicConcentration_NES']={ -- Classic Concentration (NES)
+		func=function() return function()
+		local prize_changed, prize, prev_prize = update_prev('prize', memory.read_u8(0x005B, "RAM"))
+		local solve_changed, solve, prev_solve = update_prev('solve', memory.read_u8(0x00C0, "RAM"))
+		local scene_changed, scene, prev_scene = update_prev('scene', memory.read_u8(0x0012, "RAM"))
+		local active_changed, active, prev_active = update_prev('active', memory.read_u8(0x001F, "RAM"))
+		return
+			--(prize_changed and prize > prev_prize) or -- Activate to swaps on any opponent matches.
+			(scene ~= 127 and active_changed and active == 1) or -- Swaps when P1 misses a match in main rounds. Does not trigger in bonus rounds.
+			(solve_changed and solve > prev_solve), 30  -- Swaps on P2 solving
+		end
+	end,
 	},
 	['WheelOfFortune_NES']={ -- Wheel of Fortune (NES)
 		func=WheelOfFortune_NES_swap,
