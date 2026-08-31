@@ -9672,7 +9672,7 @@ local gamedata = {
 			-- it's possible to get an extra life while you have the maximum lives, but your lives will be pushed back down to 8 at the start of the next level. 
 			return math.min(memory.read_u8(0x0020, "rp2a03 : ram : 0x0-0x7FF"), 8) end,
 		maxhp=function() return 1 end, 
-		gmode=function() return memory.read_u8(0x0219, "rp2a03 : ram : 0x0-0x7FF") == 251 end,
+		gmode=function() return memory.read_u8(0x00F5, "rp2a03 : ram : 0x0-0x7FF") == 6 end,
 		CanHaveInfiniteLives=true,
 		p1livesaddr=function() return 0x0020 end,
 		LivesWhichRAM=function() return "rp2a03 : ram : 0x0-0x7FF" end,
